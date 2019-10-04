@@ -1,13 +1,14 @@
 /**
  * TODO: determine the best way to set public/private
  */
+
+
+
 class DB {
   constructor(db, ctx, serviceProvider) {
-    this.ns = db;
-    this.ctx = ctx;
     this.serviceProvider = serviceProvider;
     this.runCommand = (cmd) => {
-      return serviceProvider.command(this.ns, cmd);
+      return serviceProvider.runCommand(db, cmd)/*.catch()*/;
     }
   };
 }
@@ -30,6 +31,8 @@ class Mapper {
       console.log('calling help from shellApi');
       callback();
     };
+
+    /* Example funcs */
     this._updatePublicVar = (callback, val) => {
       console.log(`updating publicVar=${val}`);
       this._ctx.publicVar = val;
@@ -40,7 +43,6 @@ class Mapper {
       this._privateVar = val;
       callback();
     };
-
     this.publicFunc = (val) => {
       console.log(`calling public function with ${val}`);
       this._use(() => {}, val);

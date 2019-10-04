@@ -1,10 +1,10 @@
 import NodeTransport from './NodeTransport.js';
 
 class CLIServiceProvider {
-  constructor(ctx) {
+  constructor(ctx, client) {
     this.ctx = ctx;
-    this.nodeTransport = new NodeTransport(ctx);
-    this.command = this.nodeTransport.command;
+    this.nodeTransport = new NodeTransport(ctx, client);
+    this.runCommand = this.nodeTransport.runCommand;
   }
 }
 

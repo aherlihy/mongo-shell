@@ -1,6 +1,8 @@
 import repl from 'repl';
 import ShellApi from './ShellApi.js';
 import CLIServiceProvider from './CLIServiceProvider.js';
+import { MongoClient } from 'mongodb';
+const URI = 'mongodb://localhost:27017';
 
 // Color functions
 const COLORS = { RED: "31", GREEN: "32", YELLOW: "33", BLUE: "34", MAGENTA: "35" };
@@ -18,19 +20,27 @@ const sayWelcome = say(`
 // Print the welcome message
 sayWelcome();
 
-// TODO: try to turn on repl await
-process.env.NODE_OPTIONS = '--experimental-repl-await';
-console.log(`process env =${process.env.NODE_OPTIONS}`);
-
 const myRepl = repl.start({ prompt: '> '});
 const originalEval = myRepl.eval;
 myRepl.eval = myEval;
 
+const client = new MongoClient(URI);
+async function connect() {
+  return await client.connect();
+}
+connect();
 
-const ServiceProvider = new CLIServiceProvider(myRepl.context);
+const ServiceProvider = new CLIServiceProvider(myRepl.context, client);
 const myShellApi = new ShellApi(myRepl.context, ServiceProvider);
 Object.keys(myShellApi).filter(k => (!k.startsWith('_'))).forEach(k => (myRepl.context[k] = myShellApi[k]));
 
+function finish(err, res, cb) {
+  Promise.resolve(res).then((result) => {
+    cb(null, result);
+  }).catch((error) => {
+    cb(error, null);
+  });
+}
 
 function myEval(input, context, filename, callback) {
     const argv = input.trim().split(' ');
@@ -46,7 +56,6 @@ function myEval(input, context, filename, callback) {
       case 'private':
         return myShellApi._updatePrivateVar(callback, ...argv);
       default:
-        originalEval(input, context, filename, callback);
-      // originalEval(`await ${input}`, context, filename, callback);
+        originalEval(input, context, filename, (err, res) => { finish(err, res, callback) });
     }
 }
