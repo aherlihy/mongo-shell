@@ -42,8 +42,17 @@ class Cursor {
     this.next.topologies = ["ReplSet","Standalone"];
   }
 }
+
 class Database {
   constructor(mapper, database) {
+    const handler = {
+      get: function (obj, prop) {
+        if (!(prop in obj)) {
+          obj[prop] = new Collection(mapper, database, prop);
+        }
+        return obj[prop];
+      }
+    };
     this.mapper = mapper;
     this.database = database;
     this.help = "The database class.\nAttributes: runCommand"
@@ -53,8 +62,11 @@ class Database {
     this.runCommand.help = "Runs an arbitrary command on the database.\nAttributes: serverVersions, topologies";
     this.runCommand.serverVersions = [0,-1];
     this.runCommand.topologies = ["ReplSet","Standalone"];
+
+    return new Proxy(this, handler)
   }
 }
+
 class ReplicaSet {
   constructor(mapper) {
     this.mapper = mapper;
