@@ -2,15 +2,19 @@
   "name": "mongosh",
   "version": "0.0.0",
   "description": "",
-  "main": "repl.js",
+  "main": "lib/index.js",
   "scripts": {
     "compile": "node compile-shell-api.js",
     "build": "npm run compile && rimraf lib/ && babel ./src --out-dir lib/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
     "start": "npm run build && node lib/index.js",
-    "check": "mongodb-js-precommit './codegeneration/**/*{.js,.jsx}' './test/**/*.js' index.js"
+    "check": "mongodb-js-precommit './src/*{.js}' './test/*.js'"
   },
+  "precommit": [
+    "check"
+  ],
   "dependencies": {
     "mongodb": "^3.3.2",
+    "mongodb-js-precommit": "^2.0.0",
     "node": "^12.11.0"
   },
   "devDependencies": {
