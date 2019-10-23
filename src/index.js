@@ -50,11 +50,10 @@ function customEval(input, context, filename, callback) {
     argv.shift();
     switch(cmd) {
       case 'help':
-        myShellApi.help(...argv);
-        return callback();
+        myShellApi.help;
+        return callback(null, myShellApi.help);
       case 'use':
-        myShellApi.use(argv[0]);
-        return callback();
+        return callback(null, myShellApi.use(argv[0]));
       default:
         originalEval(input, context, filename, (err, res) => { finish(err, res, callback) });
     }

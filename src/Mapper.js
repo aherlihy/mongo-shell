@@ -17,6 +17,7 @@ class Mapper {
     
     this.use = (db) => {
       this._ctx.db = new Database(this, db);
+      return `switched to db ${db}`;
     };
   }
 
