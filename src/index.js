@@ -1,5 +1,6 @@
 import repl from 'repl';
 import ShellApi from './ShellApi.js';
+import Mapper from './Mapper.js';
 import CLIServiceProvider from './CLIServiceProvider.js';
 import { MongoClient } from 'mongodb';
 const URI = 'mongodb://localhost:27017';
@@ -22,7 +23,7 @@ sayWelcome();
 
 const myRepl = repl.start({ prompt: '> '});
 const originalEval = myRepl.eval;
-myRepl.eval = myEval;
+myRepl.eval = customEval;
 
 const client = new MongoClient(URI);
 async function connect() {
@@ -31,7 +32,8 @@ async function connect() {
 connect();
 
 const ServiceProvider = new CLIServiceProvider(myRepl.context, client);
-const myShellApi = new ShellApi(myRepl.context, ServiceProvider);
+const mapper = new Mapper(myRepl.context, ServiceProvider);
+const myShellApi = new ShellApi(mapper);
 Object.keys(myShellApi).filter(k => (!k.startsWith('_'))).forEach(k => (myRepl.context[k] = myShellApi[k]));
 
 function finish(err, res, cb) {
@@ -42,19 +44,17 @@ function finish(err, res, cb) {
   });
 }
 
-function myEval(input, context, filename, callback) {
+function customEval(input, context, filename, callback) {
     const argv = input.trim().split(' ');
     const cmd = argv[0];
     argv.shift();
     switch(cmd) {
       case 'help':
-        return myShellApi._help(callback, ...argv);
+        myShellApi.help(...argv);
+        return callback();
       case 'use':
-        return myShellApi._use(callback, ...argv);
-      case 'public':
-        return myShellApi._updatePublicVar(callback, ...argv);
-      case 'private':
-        return myShellApi._updatePrivateVar(callback, ...argv);
+        myShellApi.use(argv[0]);
+        return callback();
       default:
         originalEval(input, context, filename, (err, res) => { finish(err, res, callback) });
     }
