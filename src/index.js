@@ -25,7 +25,7 @@ const myRepl = repl.start({ prompt: '> '});
 const originalEval = myRepl.eval;
 myRepl.eval = customEval;
 
-const client = new MongoClient(URI);
+const client = new MongoClient(URI, {useNewUrlParser: true, useUnifiedTopology: true});
 async function connect() {
   return await client.connect();
 }

@@ -5,32 +5,25 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 
 const FILES = [
-  'ShellApi',
-  'Collection',
   'Cursor',
+  'Collection',
   'Database',
   'ReplicaSet',
-  'Shard'
+  'Shard',
+  'ShellApi'
 ];
-const classTemplate = (filename, lib) => {
-  const args = ['mapper'].concat(lib.__constructorArgs ? lib.__constructorArgs : []);
-  const argsStr = args.reduce((s, k) => (
-    `${s}    this.${k} = ${k};\n`
-  ), '');
-  
-  const contents = Object.keys(lib).reduce((s, k) => {
-    if (!k.startsWith('__')) {
-      const f = fieldTemplate(k, lib);
-      return `${s}${f}\n`
-    }
-    return s;
-  }, argsStr);
 
-  return `class ${filename} {
-  constructor(${args.join(', ')}) {
-${contents}  }
-}
-`};
+const proxyTemplate = (contents) => (`    const handler = {
+      get: function (obj, prop) {
+        if (!(prop in obj)) {
+          obj[prop] = new Collection(mapper, database, prop);
+        }
+        return obj[prop];
+      }
+    };
+${contents}
+    return new Proxy(this, handler);
+`);
 
 const attrTemplate = (base, name, value, parent) => {
   if (name === 'help') {
@@ -38,7 +31,7 @@ const attrTemplate = (base, name, value, parent) => {
     value = `${value}
 Attributes: ${publicAttr.join(', ')}`;
   }
-  return `${base}.${name} = ${JSON.stringify(value)}`;
+  return `${base}.${name} = ${JSON.stringify(value)};`;
 };
 
 const fieldTemplate = (name, parent) => {
@@ -50,16 +43,40 @@ const fieldTemplate = (name, parent) => {
     const base = `    this.${name} = function() {
       return this.mapper.${name}(...arguments);
     };`;
-    
+
     return Object.keys(attr)
       .filter((a) => (!a.startsWith('__')))
       .reduce((s, k) => (
         `${s}
-${attrTemplate(`    this.${name}`, k, attr[k], attr)};`
-    ), base);
+${attrTemplate(`    this.${name}`, k, attr[k], attr)}`
+      ), base);
   }
   return '';
 };
+
+const classTemplate = (filename, lib) => {
+  const args = ['mapper'].concat(lib.__constructorArgs ? lib.__constructorArgs : []);
+  const argsStr = args.reduce((s, k) => (
+    `${s}    this.${k} = ${k};\n`
+  ), '');
+  
+  let contents = Object.keys(lib).reduce((s, k) => {
+    if (!k.startsWith('__')) {
+      const f = fieldTemplate(k, lib);
+      return `${s}${f}\n`
+    }
+    return s;
+  }, argsStr);
+
+  if (filename === 'Database') {
+    contents = proxyTemplate(contents);
+  }
+
+  return `class ${filename} {
+  constructor(${args.join(', ')}) {
+${contents}  }
+}
+`};
 
 const loadLibrary = (dir, file) => {
   const main = fs.readFileSync(path.join(dir, 'main.yaml'));
@@ -84,9 +101,6 @@ export { ${FILES.join(', ')} };`;
     path.join(__dirname, 'src', 'ShellApi.js'),
     `${result}\n${exports}`
   );
-  
-  
-  
 };
 
 loadAll();

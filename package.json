@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "compile": "node compile-shell-api.js",
-    "build": "rimraf lib/ && babel ./src --out-dir lib/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
+    "build": "npm run compile && rimraf lib/ && babel ./src --out-dir lib/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
     "start": "npm run build && node lib/index.js",
     "run": "node lib/index.js",
     "check": "mongodb-js-precommit './src/*{.js}' './test/*.js'"
